@@ -7,6 +7,9 @@ class InvoiceApp {
         this.initializeApp();
         this.attachEventListeners();
         this.updateCalculations();
+        this.advanceEnabled = false;
+        this.advancePercentage = 50;
+        this.advanceBase = 'subtotal';
     }
 
     initializeApp() {
@@ -41,6 +44,40 @@ class InvoiceApp {
         gstAmountRow.style.display = 'none';
     }
 
+    // Add this initialization method to ensure proper setup:
+    initializeAdvance() {
+        const advanceCheckbox = document.getElementById('advanceEnabled');
+        const advancePercentageGroup = document.getElementById('advancePercentageGroup');
+        const advanceBaseGroup = document.getElementById('advanceBaseGroup');
+        const advanceAmountRow = document.getElementById('advanceAmountRow');
+        const advancePercentageInput = document.getElementById('advancePercentage');
+        
+        if (!advanceCheckbox || !advancePercentageInput) {
+            console.log('Advance elements not found in DOM');
+            return;
+        }
+        
+        // Set initial values
+        advanceCheckbox.checked = false;
+        this.advanceEnabled = false;
+        this.advancePercentage = parseFloat(advancePercentageInput.value) || 50;
+        this.advanceBase = 'subtotal';
+        
+        // Hide controls initially
+        if (advancePercentageGroup) advancePercentageGroup.style.display = 'none';
+        if (advanceBaseGroup) advanceBaseGroup.style.display = 'none';
+        if (advanceAmountRow) advanceAmountRow.style.display = 'none';
+        
+        console.log('Advance initialized with percentage:', this.advancePercentage);
+        
+        // Set initial display values
+        const displayElement = document.getElementById('advancePercentageDisplay');
+        if (displayElement) {
+            displayElement.textContent = this.advancePercentage;
+        }
+    }
+
+
     attachEventListeners() {
         // Mode toggle
         const toggleBtn = document.getElementById('toggleMode');
@@ -64,6 +101,27 @@ class InvoiceApp {
 
         const gstPercentageInput = document.getElementById('gstPercentage');
         gstPercentageInput.addEventListener('input', () => this.updateGSTPercentage());
+
+        // ADVANCE CONTROLS - Fixed event listeners
+        const advanceCheckbox = document.getElementById('advanceEnabled');
+        if (advanceCheckbox) {
+            advanceCheckbox.addEventListener('change', (e) => this.toggleAdvance(e.target.checked));
+        }
+
+        const advancePercentageInput = document.getElementById('advancePercentage');
+        if (advancePercentageInput) {
+            // Use both 'input' and 'change' events for immediate response
+            advancePercentageInput.addEventListener('input', (e) => {
+                console.log('Advance percentage input changed to:', e.target.value);
+                this.updateAdvancePercentage();
+            });
+            advancePercentageInput.addEventListener('change', () => this.updateAdvancePercentage());
+        }
+
+        const advanceBaseSelect = document.getElementById('advanceBase');
+        if (advanceBaseSelect) {
+            advanceBaseSelect.addEventListener('change', () => this.updateAdvanceBase());
+        }
 
         // Form field listeners
         this.attachFormListeners();
@@ -240,6 +298,118 @@ class InvoiceApp {
         this.updateCalculations();
     }
 
+    toggleAdvance(enabled) {
+        this.advanceEnabled = enabled;
+        const advancePercentageGroup = document.getElementById('advancePercentageGroup');
+        const advanceBaseGroup = document.getElementById('advanceBaseGroup');
+        const advanceAmountRow = document.getElementById('advanceAmountRow');
+        
+        if (enabled) {
+            advancePercentageGroup.style.display = 'flex';
+            advanceBaseGroup.style.display = 'flex';
+            advanceAmountRow.style.display = 'flex';
+        } else {
+            advancePercentageGroup.style.display = 'none';
+            advanceBaseGroup.style.display = 'none';
+            advanceAmountRow.style.display = 'none';
+        }
+        
+        this.updateAdvanceCalculation();
+    }
+
+    updateAdvancePercentage() {
+        const advancePercentageInput = document.getElementById('advancePercentage');
+        const oldPercentage = this.advancePercentage;
+        this.advancePercentage = parseFloat(advancePercentageInput.value) || 0;
+        
+        console.log(`Advance percentage changed from ${oldPercentage}% to ${this.advancePercentage}%`);
+        
+        // Update the display percentage immediately
+        const displayElement = document.getElementById('advancePercentageDisplay');
+        if (displayElement) {
+            displayElement.textContent = this.advancePercentage;
+        }
+        
+        // Force immediate recalculation
+        this.updateAdvanceCalculation();
+    }
+
+    updateAdvanceBase() {
+        const advanceBaseSelect = document.getElementById('advanceBase');
+        this.advanceBase = advanceBaseSelect.value;
+        
+        // Update the display text
+        const displayText = this.advanceBase === 'subtotal' ? 'Subtotal' : 'Total Amount';
+        document.getElementById('advanceBaseDisplay').textContent = displayText;
+        
+        // Force recalculation
+        this.updateAdvanceCalculation();
+    }
+
+    updateAdvanceCalculation() {
+        const advanceAmountElement = document.getElementById('advanceAmount');
+        
+        if (!this.advanceEnabled || !advanceAmountElement) {
+            if (advanceAmountElement) {
+                advanceAmountElement.textContent = this.formatCurrency(0);
+            }
+            return;
+        }
+
+        // Get the base amount based on selection
+        let baseAmount = 0;
+        
+        if (this.advanceBase === 'subtotal') {
+            // Calculate subtotal from current items
+            document.querySelectorAll('.item-row').forEach((row, index) => {
+                const rateValue = row.querySelector('.item-rate').value;
+                const qtyValue = row.querySelector('.item-qty').value;
+                
+                const rate = parseFloat(rateValue) || 0;
+                const qty = parseInt(qtyValue) || 1;
+                const itemAmount = rate * qty;
+                
+                console.log(`Item ${index}: Rate=${rate}, Qty=${qty}, Amount=${itemAmount}`);
+                baseAmount += itemAmount;
+            });
+        } else {
+            // Use total amount (subtotal + GST if enabled)
+            baseAmount = this.calculateTotal();
+        }
+
+        // Calculate advance amount using current percentage
+        const advanceAmount = (baseAmount * this.advancePercentage) / 100;
+        
+        console.log(`Advance Calculation: ${this.advancePercentage}% of ${this.formatCurrency(baseAmount)} = ${this.formatCurrency(advanceAmount)}`);
+        
+        // Update the display immediately
+        advanceAmountElement.textContent = this.formatCurrency(advanceAmount);
+    }
+
+
+    calculateTotal() {
+        let subtotal = 0;
+        
+        // Calculate subtotal
+        document.querySelectorAll('.item-row').forEach((row) => {
+            const rateValue = row.querySelector('.item-rate').value;
+            const qtyValue = row.querySelector('.item-qty').value;
+            
+            const rate = parseFloat(rateValue) || 0;
+            const qty = parseInt(qtyValue) || 1;
+            
+            subtotal += (rate * qty);
+        });
+
+        // Add GST if enabled
+        if (this.gstEnabled) {
+            const gstAmount = (subtotal * this.gstPercentage) / 100;
+            return subtotal + gstAmount;
+        }
+        
+        return subtotal;
+    }
+
     updateGSTPercentage() {
         const gstPercentageInput = document.getElementById('gstPercentage');
         this.gstPercentage = parseFloat(gstPercentageInput.value) || 0;
@@ -274,6 +444,10 @@ class InvoiceApp {
         editFields.forEach(field => {
             field.removeAttribute('readonly');
             field.removeAttribute('disabled');
+
+            // Enable advance checkbox
+            const advanceCheckbox = document.getElementById('advanceEnabled');
+            advanceCheckbox.removeAttribute('disabled');
         });
 
         // Enable GST checkbox
@@ -290,6 +464,10 @@ class InvoiceApp {
         // Disable GST checkbox in view mode
         const gstCheckbox = document.getElementById('gstEnabled');
         gstCheckbox.setAttribute('disabled', true);
+
+        // Disable advance checkbox in view mode
+        const advanceCheckbox = document.getElementById('advanceEnabled');
+        advanceCheckbox.setAttribute('disabled', true);
     }
 
     updateViewTexts() {
@@ -430,6 +608,8 @@ class InvoiceApp {
 
             row.querySelector('.item-amount').textContent = this.formatCurrency(amount);
             subtotal += amount;
+            // Update advance calculation
+            this.updateAdvanceCalculation();
         });
 
         // Update subtotal
@@ -475,6 +655,8 @@ class InvoiceApp {
                 element.textContent = this.formatCurrency(balanceDue);
             }
         });
+        // *** IMPORTANT: Update advance calculation LAST ***
+        this.updateAdvanceCalculation();
     }
 
     formatCurrency(amount) {
