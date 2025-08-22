@@ -1098,6 +1098,61 @@ body {
   text-align: right;
 }
 
+/* Advance Controls - similar to GST controls */
+.advance-controls {
+    margin: 15px 0;
+    padding: 12px;
+    background: var(--invoice-light-gray);
+    border-radius: 8px;
+    border: 1px solid var(--invoice-border);
+}
+
+.advance-checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.advance-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.advance-label {
+    font-weight: 600;
+    color: var(--invoice-primary);
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.advance-percentage-group, .advance-base-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.advance-input {
+    width: 80px;
+    text-align: center;
+}
+
+.advance-select {
+    width: 120px;
+}
+
+.advance-row {
+    color: var(--invoice-secondary);
+    font-style: italic;
+}
+
+/* Hide advance controls in view mode */
+.view-mode .advance-controls {
+    display: none;
+}
+
 .gst-row {
   color: var(--invoice-secondary);
   font-style: italic;
@@ -1273,84 +1328,106 @@ input[type="file"]:focus {
   margin-bottom: 5px;
 }
 
-/* Print Styles */
+/* Enhanced Print Styles for better page breaks */
 @media print {
-  .mode-toggle {
-    display: none;
-  }
-  
-  .app-container {
-    box-shadow: none;
-    margin: 0;
-  }
-  
-  .page {
-    padding: 20px;
-    page-break-after: always;
-  }
-  
-  .page:last-child {
-    page-break-after: auto;
-  }
-  
-  .edit-field {
-    display: none;
-  }
-  
-  .view-text {
-    display: block;
-  }
-  
-  .edit-only {
-    display: none;
-  }
-  
-  .items-table td,
-  .items-table th {
-    border: 1px solid var(--invoice-border);
-  }
+    .mode-toggle {
+        display: none;
+    }
+
+    .app-container {
+        box-shadow: none;
+        margin: 0;
+    }
+
+    .page {
+        padding: 15mm 20mm 20mm 20mm; /* top, right, bottom, left margins */
+        page-break-after: always;
+        min-height: auto; /* Remove fixed height */
+        box-sizing: border-box;
+    }
+
+    .page:last-child {
+        page-break-after: auto;
+    }
+
+    /* Prevent breaking inside important sections */
+    .company-header,
+    .invoice-heading,
+    .invoice-metadata,
+    .bill-to-section {
+        page-break-inside: avoid;
+        margin-bottom: 15px;
+    }
+
+    .items-section {
+        page-break-inside: avoid;
+        margin-bottom: 20px;
+    }
+
+    .totals-section {
+        page-break-inside: avoid;
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+
+    .signature-section {
+        page-break-inside: avoid;
+        margin-top: 30mm; /* Ensure space before signature */
+        min-height: 40mm; /* Reserve space for signature */
+    }
+
+    .remark-section {
+        page-break-inside: avoid;
+        margin-bottom: 20px;
+    }
+
+    /* Items table improvements for print */
+    .items-table {
+        page-break-inside: auto;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    .items-table thead {
+        display: table-header-group; /* Repeat header on new pages */
+    }
+
+    .items-table tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+
+    .items-table th,
+    .items-table td {
+        border: 1px solid var(--invoice-border);
+        padding: 8px 6px;
+        font-size: 12px;
+    }
+
+    /* Ensure content doesn't get cut off */
+    @page {
+        margin: 15mm 10mm 20mm 10mm; /* top, right, bottom, left */
+        size: A4;
+    }
+
+    /* Force page break before signature if needed */
+    .force-page-break {
+        page-break-before: always;
+    }
+
+    .edit-field {
+        display: none;
+    }
+
+    .view-text {
+        display: block;
+    }
+
+    .edit-only {
+        display: none;
+    }
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .app-container {
-    margin: 10px;
-  }
-  
-  .page {
-    padding: 20px;
-  }
-  
-  .company-header {
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .logo-section {
-    margin-left: 0;
-    align-self: flex-end;
-  }
-  
-  .metadata-row {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .metadata-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
-  }
-  
-  .items-table {
-    font-size: 12px;
-  }
-  
-  .items-table th,
-  .items-table td {
-    padding: 6px 4px;
-  }
-}
 
 /* Page Break Support */
 .page-break {
