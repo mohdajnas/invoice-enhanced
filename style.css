@@ -1238,8 +1238,10 @@ input[type="file"]:focus {
 }
 
 .view-mode .field-label {
-  display: none;
+  display: block;
+  margin-bottom: 5px;
 }
+
 
 .view-mode .signature-placeholder {
   display: block;
