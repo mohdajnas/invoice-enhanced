@@ -9,7 +9,7 @@ class InvoiceApp {
         this.updateCalculations();
         this.advanceEnabled = false;
         this.advancePercentage = 50;
-        this.advanceBase = 'subtotal';
+        this.advanceBase = 'total';
     }
 
     initializeApp() {
