@@ -500,6 +500,15 @@ class InvoiceApp {
     
         // ✅ Always update total
         document.getElementById('totalAmount').textContent = this.formatCurrency(total);
+        
+        // Received Amount
+        const receivedValue = parseFloat(document.getElementById('receivedAmountInput')?.value) || 0;
+        document.getElementById('receivedAmount').textContent = this.formatCurrency(receivedValue);
+        
+        // Balance = Total - Received
+        const balanceDue = total - receivedValue;
+        document.getElementById('balanceDue').textContent = this.formatCurrency(balanceDue);
+
     }
 
 
