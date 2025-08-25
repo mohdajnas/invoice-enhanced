@@ -1,55 +1,9 @@
 class InvoiceApp {
-        constructor() {
+    constructor() {
         this.isEditMode = false;
         this.itemCount = 1;
         this.gstEnabled = false;
         this.gstPercentage = 18;
-        this.advanceEnabled = false;
-        this.advancePercentage = 50;
-        this.advanceBase = 'total';
-        
-        // Add currency support
-        this.selectedCurrency = 'INR'; // Default currency
-        this.currencies = {
-            'INR': { symbol: '₹', name: 'Indian Rupee' },
-            'USD': { symbol: '$', name: 'US Dollar' },
-            'EUR': { symbol: '€', name: 'Euro' },
-            'GBP': { symbol: '£', name: 'British Pound' },
-            'AED': { symbol: 'د.إ', name: 'UAE Dirham' },
-            'SAR': { symbol: '﷼', name: 'Saudi Riyal' },
-            'QAR': { symbol: 'ر.ق', name: 'Qatari Riyal' },
-            'KWD': { symbol: 'د.ك', name: 'Kuwaiti Dinar' },
-            'BHD': { symbol: '.د.ب', name: 'Bahraini Dinar' },
-            'OMR': { symbol: 'ر.ع.', name: 'Omani Rial' },
-            'JPY': { symbol: '¥', name: 'Japanese Yen' },
-            'CNY': { symbol: '¥', name: 'Chinese Yuan' },
-            'CAD': { symbol: 'C$', name: 'Canadian Dollar' },
-            'AUD': { symbol: 'A$', name: 'Australian Dollar' },
-            'CHF': { symbol: 'CHF', name: 'Swiss Franc' },
-            'SEK': { symbol: 'kr', name: 'Swedish Krona' },
-            'NOK': { symbol: 'kr', name: 'Norwegian Krone' },
-            'DKK': { symbol: 'kr', name: 'Danish Krone' },
-            'PLN': { symbol: 'zł', name: 'Polish Złoty' },
-            'CZK': { symbol: 'Kč', name: 'Czech Koruna' },
-            'HUF': { symbol: 'Ft', name: 'Hungarian Forint' },
-            'RON': { symbol: 'lei', name: 'Romanian Leu' },
-            'BGN': { symbol: 'лв', name: 'Bulgarian Lev' },
-            'HRK': { symbol: 'kn', name: 'Croatian Kuna' },
-            'RUB': { symbol: '₽', name: 'Russian Ruble' },
-            'TRY': { symbol: '₺', name: 'Turkish Lira' },
-            'ZAR': { symbol: 'R', name: 'South African Rand' },
-            'BRL': { symbol: 'R$', name: 'Brazilian Real' },
-            'MXN': { symbol: '$', name: 'Mexican Peso' },
-            'SGD': { symbol: 'S$', name: 'Singapore Dollar' },
-            'HKD': { symbol: 'HK$', name: 'Hong Kong Dollar' },
-            'KRW': { symbol: '₩', name: 'South Korean Won' },
-            'THB': { symbol: '฿', name: 'Thai Baht' },
-            'MYR': { symbol: 'RM', name: 'Malaysian Ringgit' },
-            'IDR': { symbol: 'Rp', name: 'Indonesian Rupiah' },
-            'PHP': { symbol: '₱', name: 'Philippine Peso' },
-            'VND': { symbol: '₫', name: 'Vietnamese Dong' }
-        };
-        
         this.initializeApp();
         this.attachEventListeners();
         this.updateCalculations();
@@ -58,10 +12,6 @@ class InvoiceApp {
     initializeApp() {
         // Set initial mode
         document.body.classList.add('view-mode');
-        
-        // Add currency selector to the interface
-        this.createCurrencySelector();
-        
         // Initialize form values
         this.updateViewTexts();
         this.setupPagination();
@@ -69,7 +19,7 @@ class InvoiceApp {
         
         // Add new functionality
         this.addRemarkSection();
-        this.createEditableAmountTitles();
+        this.createEditableAmountTitles(); // Updated method name
         
         // Disable signature upload
         const signatureUpload = document.getElementById('signatureUpload');
@@ -77,7 +27,6 @@ class InvoiceApp {
             signatureUpload.style.display = 'none';
         }
     }
-
 
 
     initializeGST() {
@@ -92,145 +41,42 @@ class InvoiceApp {
         gstAmountRow.style.display = 'none';
     }
 
-    // Add this initialization method to ensure proper setup:
-    initializeAdvance() {
-        const advanceCheckbox = document.getElementById('advanceEnabled');
-        const advancePercentageGroup = document.getElementById('advancePercentageGroup');
-        const advanceBaseGroup = document.getElementById('advanceBaseGroup');
-        const advanceAmountRow = document.getElementById('advanceAmountRow');
-        const advancePercentageInput = document.getElementById('advancePercentage');
-        
-        if (!advanceCheckbox || !advancePercentageInput) {
-            console.log('Advance elements not found in DOM');
-            return;
-        }
-        
-        // Set initial values
-        advanceCheckbox.checked = false;
-        this.advanceEnabled = false;
-        this.advancePercentage = parseFloat(advancePercentageInput.value) || 50;
-        this.advanceBase = 'subtotal';
-        
-        // Hide controls initially
-        if (advancePercentageGroup) advancePercentageGroup.style.display = 'none';
-        if (advanceBaseGroup) advanceBaseGroup.style.display = 'none';
-        if (advanceAmountRow) advanceAmountRow.style.display = 'none';
-        
-        console.log('Advance initialized with percentage:', this.advancePercentage);
-        
-        // Set initial display values
-        const displayElement = document.getElementById('advancePercentageDisplay');
-        if (displayElement) {
-            displayElement.textContent = this.advancePercentage;
-        }
-    }
-
-    createCurrencySelector() {
-        // Check if currency selector already exists
-        if (document.getElementById('currencySelector')) return;
-        
-        // Find the GST controls section to add currency selector before it
-        const gstControls = document.querySelector('.gst-controls');
-        if (!gstControls) return;
-        
-        // Create currency selector container
-        const currencyContainer = document.createElement('div');
-        currencyContainer.className = 'currency-controls edit-only';
-        currencyContainer.style.cssText = `
-            margin: 15px 0;
-            padding: 12px;
-            background: var(--invoice-light-gray);
-            border-radius: 8px;
-            border: 1px solid var(--invoice-border);
-        `;
-        
-        currencyContainer.innerHTML = `
-            <div class="currency-selector-group" style="display: flex; align-items: center; gap: 10px;">
-                <label for="currencySelector" class="currency-label" style="font-weight: 600; color: var(--invoice-primary); font-size: 12px; min-width: 80px;">
-                    CURRENCY:
-                </label>
-                <select id="currencySelector" class="edit-field currency-select" style="width: 200px; padding: 6px 8px;">
-                    ${Object.entries(this.currencies).map(([code, details]) => 
-                        `<option value="${code}" ${code === this.selectedCurrency ? 'selected' : ''}>${code} - ${details.name} (${details.symbol})</option>`
-                    ).join('')}
-                </select>
-                <span class="currency-preview" style="font-weight: 600; color: var(--invoice-secondary); margin-left: 10px;">
-                    ${this.currencies[this.selectedCurrency].symbol}
-                </span>
-            </div>
-        `;
-        
-        // Insert before GST controls
-        gstControls.parentNode.insertBefore(currencyContainer, gstControls);
-    }
-
-
-    // Update attachEventListeners to include currency selector
     attachEventListeners() {
         // Mode toggle
         const toggleBtn = document.getElementById('toggleMode');
         toggleBtn.addEventListener('click', () => this.toggleMode());
-    
+
         // Print button
         const printBtn = document.getElementById('printBtn');
         printBtn.addEventListener('click', () => this.printInvoice());
-    
+
         // Download button
         const downloadBtn = document.getElementById('downloadBtn');
         downloadBtn.addEventListener('click', () => this.downloadPDF());
-    
+
         // Add row button
         const addRowBtn = document.getElementById('addRowBtn');
         addRowBtn.addEventListener('click', () => this.addItemRow());
-    
-        // Currency selector
-        setTimeout(() => {
-            const currencySelector = document.getElementById('currencySelector');
-            if (currencySelector) {
-                currencySelector.addEventListener('change', (e) => this.updateCurrency(e.target.value));
-            }
-        }, 100);
-    
+
         // GST controls
         const gstCheckbox = document.getElementById('gstEnabled');
         gstCheckbox.addEventListener('change', (e) => this.toggleGST(e.target.checked));
-    
+
         const gstPercentageInput = document.getElementById('gstPercentage');
         gstPercentageInput.addEventListener('input', () => this.updateGSTPercentage());
-    
-        // ADVANCE CONTROLS
-        const advanceCheckbox = document.getElementById('advanceEnabled');
-        if (advanceCheckbox) {
-            advanceCheckbox.addEventListener('change', (e) => this.toggleAdvance(e.target.checked));
-        }
-    
-        const advancePercentageInput = document.getElementById('advancePercentage');
-        if (advancePercentageInput) {
-            advancePercentageInput.addEventListener('input', (e) => {
-                console.log('Advance percentage input changed to:', e.target.value);
-                this.updateAdvancePercentage();
-            });
-            advancePercentageInput.addEventListener('change', () => this.updateAdvancePercentage());
-        }
-    
-        const advanceBaseSelect = document.getElementById('advanceBase');
-        if (advanceBaseSelect) {
-            advanceBaseSelect.addEventListener('change', () => this.updateAdvanceBase());
-        }
-    
+
         // Form field listeners
         this.attachFormListeners();
-    
+
         // Signature upload (disabled)
         const signatureUpload = document.getElementById('signatureUpload');
         if (signatureUpload) {
             signatureUpload.addEventListener('change', (e) => this.handleSignatureUpload(e));
         }
-    
+
         // Initial row calculation listeners
         this.attachRowListeners(0);
     }
-
 
     attachFormListeners() {
         // Invoice metadata listeners
@@ -394,143 +240,6 @@ class InvoiceApp {
         this.updateCalculations();
     }
 
-    toggleAdvance(enabled) {
-        this.advanceEnabled = enabled;
-        const advancePercentageGroup = document.getElementById('advancePercentageGroup');
-        const advanceBaseGroup = document.getElementById('advanceBaseGroup');
-        const advanceAmountRow = document.getElementById('advanceAmountRow');
-        
-        if (enabled) {
-            advancePercentageGroup.style.display = 'flex';
-            advanceBaseGroup.style.display = 'flex';
-            advanceAmountRow.style.display = 'flex';
-        } else {
-            advancePercentageGroup.style.display = 'none';
-            advanceBaseGroup.style.display = 'none';
-            advanceAmountRow.style.display = 'none';
-        }
-        
-        this.updateAdvanceCalculation();
-    }
-
-    / Add currency update method
-    updateCurrency(currencyCode) {
-        this.selectedCurrency = currencyCode;
-        
-        // Update currency preview
-        const currencyPreview = document.querySelector('.currency-preview');
-        if (currencyPreview) {
-            currencyPreview.textContent = this.currencies[currencyCode].symbol;
-        }
-        
-        // Update all currency displays
-        this.updateCalculations();
-        this.updateViewTexts();
-    }
-
-    // Add method to get current currency info
-    getCurrentCurrencyInfo() {
-        return {
-            code: this.selectedCurrency,
-            symbol: this.currencies[this.selectedCurrency].symbol,
-            name: this.currencies[this.selectedCurrency].name
-        };
-    }
-
-
-    updateAdvancePercentage() {
-        const advancePercentageInput = document.getElementById('advancePercentage');
-        const oldPercentage = this.advancePercentage;
-        this.advancePercentage = parseFloat(advancePercentageInput.value) || 0;
-        
-        console.log(`Advance percentage changed from ${oldPercentage}% to ${this.advancePercentage}%`);
-        
-        // Update the display percentage immediately
-        const displayElement = document.getElementById('advancePercentageDisplay');
-        if (displayElement) {
-            displayElement.textContent = this.advancePercentage;
-        }
-        
-        // Force immediate recalculation
-        this.updateAdvanceCalculation();
-    }
-
-    updateAdvanceBase() {
-        const advanceBaseSelect = document.getElementById('advanceBase');
-        this.advanceBase = advanceBaseSelect.value;
-        
-        // Update the display text
-        const displayText = this.advanceBase === 'subtotal' ? 'Subtotal' : 'Total Amount';
-        document.getElementById('advanceBaseDisplay').textContent = displayText;
-        
-        // Force recalculation
-        this.updateAdvanceCalculation();
-    }
-
-    updateAdvanceCalculation() {
-        const advanceAmountElement = document.getElementById('advanceAmount');
-        
-        if (!this.advanceEnabled || !advanceAmountElement) {
-            if (advanceAmountElement) {
-                advanceAmountElement.textContent = this.formatCurrency(0);
-            }
-            return;
-        }
-
-        // Get the base amount based on selection
-        let baseAmount = 0;
-        
-        if (this.advanceBase === 'subtotal') {
-            // Calculate subtotal from current items
-            document.querySelectorAll('.item-row').forEach((row, index) => {
-                const rateValue = row.querySelector('.item-rate').value;
-                const qtyValue = row.querySelector('.item-qty').value;
-                
-                const rate = parseFloat(rateValue) || 0;
-                const qty = parseInt(qtyValue) || 1;
-                const itemAmount = rate * qty;
-                
-                console.log(`Item ${index}: Rate=${rate}, Qty=${qty}, Amount=${itemAmount}`);
-                baseAmount += itemAmount;
-            });
-        } else {
-            // Use total amount (subtotal + GST if enabled)
-            baseAmount = this.calculateTotal();
-        }
-
-        // Calculate advance amount using current percentage
-        const advanceAmount = (baseAmount * this.advancePercentage) / 100;
-        
-        console.log(`Advance Calculation: ${this.advancePercentage}% of ${this.formatCurrency(baseAmount)} = ${this.formatCurrency(advanceAmount)}`);
-        
-        // Update the display immediately
-        advanceAmountElement.textContent = this.formatCurrency(advanceAmount);
-    }
-
-
-    calculateTotal() {
-        let subtotal = 0;
-        
-        // Calculate subtotal
-        document.querySelectorAll('.item-row').forEach((row) => {
-            const rateValue = row.querySelector('.item-rate').value;
-            const qtyValue = row.querySelector('.item-qty').value;
-            
-            const rate = parseFloat(rateValue) || 0;
-            const qty = parseInt(qtyValue) || 1;
-            
-            subtotal += (rate * qty);
-        });
-
-        // Add GST if enabled
-        if (this.gstEnabled) {
-            const gstAmount = (subtotal * this.gstPercentage) / 100;
-            return subtotal + gstAmount;
-        }
-        
-        return subtotal;
-    }
-
     updateGSTPercentage() {
         const gstPercentageInput = document.getElementById('gstPercentage');
         this.gstPercentage = parseFloat(gstPercentageInput.value) || 0;
@@ -565,10 +274,6 @@ class InvoiceApp {
         editFields.forEach(field => {
             field.removeAttribute('readonly');
             field.removeAttribute('disabled');
-
-            // Enable advance checkbox
-            const advanceCheckbox = document.getElementById('advanceEnabled');
-            advanceCheckbox.removeAttribute('disabled');
         });
 
         // Enable GST checkbox
@@ -585,10 +290,6 @@ class InvoiceApp {
         // Disable GST checkbox in view mode
         const gstCheckbox = document.getElementById('gstEnabled');
         gstCheckbox.setAttribute('disabled', true);
-
-        // Disable advance checkbox in view mode
-        const advanceCheckbox = document.getElementById('advanceEnabled');
-        advanceCheckbox.setAttribute('disabled', true);
     }
 
     updateViewTexts() {
@@ -729,8 +430,6 @@ class InvoiceApp {
 
             row.querySelector('.item-amount').textContent = this.formatCurrency(amount);
             subtotal += amount;
-            // Update advance calculation
-            this.updateAdvanceCalculation();
         });
 
         // Update subtotal
@@ -776,29 +475,13 @@ class InvoiceApp {
                 element.textContent = this.formatCurrency(balanceDue);
             }
         });
-        // *** IMPORTANT: Update advance calculation LAST ***
-        this.updateAdvanceCalculation();
     }
 
-    // Update the formatCurrency method to use selected currency
     formatCurrency(amount) {
         // Ensure amount is a valid number
         const numAmount = parseFloat(amount) || 0;
-        const currencyData = this.currencies[this.selectedCurrency];
-        
-        // Format based on currency
-        if (this.selectedCurrency === 'JPY' || this.selectedCurrency === 'KRW' || this.selectedCurrency === 'VND') {
-            // No decimal places for these currencies
-            return `${currencyData.symbol}${Math.round(numAmount)}`;
-        } else if (this.selectedCurrency === 'BHD' || this.selectedCurrency === 'KWD' || this.selectedCurrency === 'OMR') {
-            // 3 decimal places for these currencies
-            return `${currencyData.symbol}${numAmount.toFixed(3)}`;
-        } else {
-            // 2 decimal places for most currencies
-            return `${currencyData.symbol}${numAmount.toFixed(2)}`;
-        }
+        return `₹${numAmount.toFixed(2)}`;
     }
-
 
     formatDate(dateString) {
         if (!dateString) return '';
@@ -1109,10 +792,9 @@ class InvoiceApp {
             remarkField: document.getElementById('remarkField')?.value || '',
             gstEnabled: this.gstEnabled,
             gstPercentage: this.gstPercentage,
-            selectedCurrency: this.selectedCurrency, // Add currency to saved data
             items: []
         };
-    
+
         document.querySelectorAll('.item-row').forEach(row => {
             data.items.push({
                 description: row.querySelector('.item-description').value,
@@ -1120,14 +802,13 @@ class InvoiceApp {
                 qty: row.querySelector('.item-qty').value
             });
         });
-    
+
         return data;
     }
 
-    // Update loadData method to include currency
     loadData(data) {
         if (!data) return;
-    
+
         // Load basic fields
         if (data.invoiceNumber) document.getElementById('invoiceNumber').value = data.invoiceNumber;
         if (data.invoiceDate) document.getElementById('invoiceDate').value = data.invoiceDate;
@@ -1137,16 +818,7 @@ class InvoiceApp {
         if (data.clientContact) document.getElementById('clientContact').value = data.clientContact;
         if (data.receivedAmount) document.getElementById('receivedAmount').value = data.receivedAmount;
         if (data.remarkField) document.getElementById('remarkField').value = data.remarkField;
-    
-        // Load currency
-        if (data.selectedCurrency && this.currencies[data.selectedCurrency]) {
-            this.selectedCurrency = data.selectedCurrency;
-            const currencySelector = document.getElementById('currencySelector');
-            if (currencySelector) {
-                currencySelector.value = this.selectedCurrency;
-            }
-        }
-    
+
         // Load GST settings
         if (data.gstEnabled !== undefined) {
             document.getElementById('gstEnabled').checked = data.gstEnabled;
@@ -1156,14 +828,14 @@ class InvoiceApp {
             document.getElementById('gstPercentage').value = data.gstPercentage;
             this.updateGSTPercentage();
         }
-    
+
         // Load items
         if (data.items && data.items.length > 0) {
             // Clear existing rows
             const tbody = document.getElementById('itemsTableBody');
             tbody.innerHTML = '';
             this.itemCount = 0;
-    
+
             // Add rows from data
             data.items.forEach((item, index) => {
                 if (index === 0) {
@@ -1173,7 +845,7 @@ class InvoiceApp {
                 } else {
                     this.addItemRow();
                 }
-    
+
                 const currentRow = tbody.children[index];
                 currentRow.querySelector('.item-description').value = item.description || '';
                 currentRow.querySelector('.item-rate').value = item.rate || '';
@@ -1182,7 +854,7 @@ class InvoiceApp {
                 this.updateRowCalculation(index);
             });
         }
-    
+
         this.updateViewTexts();
         this.updateCalculations();
     }
