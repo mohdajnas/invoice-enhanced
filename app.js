@@ -4,6 +4,16 @@ class InvoiceApp {
         this.itemCount = 1;
         this.gstEnabled = false;
         this.gstPercentage = 18;
+        this.currency = 'INR';
+        
+        // Fixed currency symbols
+        this.currencySymbols = {
+            'INR': '₹',
+            'USD': '$', 
+            'AED': 'AED ',
+            'SAR': 'SAR '
+        };
+        
         this.initializeApp();
         this.attachEventListeners();
         this.updateCalculations();
@@ -13,96 +23,131 @@ class InvoiceApp {
     }
 
     initializeApp() {
-        // Set initial mode
         document.body.classList.add('view-mode');
-        // Initialize form values
         this.updateViewTexts();
         this.setupPagination();
         this.initializeGST();
+        this.initializeCurrency();
+        this.initializeAdvance();
         
-        // Add new functionality
         this.addRemarkSection();
-        this.createEditableAmountTitles(); // Updated method name
+        this.createEditableAmountTitles();
         
-        // Disable signature upload
         const signatureUpload = document.getElementById('signatureUpload');
         if (signatureUpload) {
             signatureUpload.style.display = 'none';
         }
     }
 
-
     initializeGST() {
-        // Set initial GST state
         const gstCheckbox = document.getElementById('gstEnabled');
         const gstPercentageGroup = document.getElementById('gstPercentageGroup');
         const gstAmountRow = document.getElementById('gstAmountRow');
+        const gstPercentageInput = document.getElementById('gstPercentage');
         
-        gstCheckbox.checked = false;
-        this.gstEnabled = false;
-        gstPercentageGroup.style.display = 'none';
-        gstAmountRow.style.display = 'none';
+        // Set initial GST state
+        if (gstCheckbox) {
+            gstCheckbox.checked = false;
+            this.gstEnabled = false;
+            
+            // Add GST checkbox event listener
+            gstCheckbox.addEventListener('change', (e) => {
+                console.log('GST checkbox changed:', e.target.checked);
+                this.toggleGST(e.target.checked);
+            });
+        }
+        
+        if (gstPercentageInput) {
+            gstPercentageInput.value = this.gstPercentage;
+            
+            // Add GST percentage input event listener
+            gstPercentageInput.addEventListener('input', (e) => {
+                console.log('GST percentage changed:', e.target.value);
+                this.gstPercentage = parseFloat(e.target.value) || 18;
+                this.updateCalculations();
+            });
+        }
+        
+        // Hide GST controls initially
+        if (gstPercentageGroup) gstPercentageGroup.style.display = 'none';
+        if (gstAmountRow) gstAmountRow.style.display = 'none';
     }
 
-    // Add this initialization method to ensure proper setup:
+    initializeCurrency() {
+        const currencySelect = document.getElementById('currencySelect');
+        const currencyDisplay = document.getElementById('currencyDisplay');
+        
+        if (currencySelect) {
+            currencySelect.value = this.currency;
+            
+            // Remove any existing event listeners to avoid duplicates
+            currencySelect.removeEventListener('change', this.currencyChangeHandler);
+            
+            // Add new event listener
+            this.currencyChangeHandler = (e) => {
+                this.handleCurrencyChange(e.target.value);
+            };
+            
+            currencySelect.addEventListener('change', this.currencyChangeHandler);
+        }
+        
+        this.updateCurrencyDisplay();
+    }
+
     initializeAdvance() {
         const advanceCheckbox = document.getElementById('advanceEnabled');
+        const advancePercentageInput = document.getElementById('advancePercentage');
+        
+        // Only proceed if elements exist
+        if (!advanceCheckbox || !advancePercentageInput) {
+            console.log('Advance elements not found in DOM - advance functionality disabled');
+            return;
+        }
+        
         const advancePercentageGroup = document.getElementById('advancePercentageGroup');
         const advanceBaseGroup = document.getElementById('advanceBaseGroup');
         const advanceAmountRow = document.getElementById('advanceAmountRow');
-        const advancePercentageInput = document.getElementById('advancePercentage');
-        
-        if (!advanceCheckbox || !advancePercentageInput) {
-            console.log('Advance elements not found in DOM');
-            return;
-        }
         
         // Set initial values
         advanceCheckbox.checked = false;
         this.advanceEnabled = false;
         this.advancePercentage = parseFloat(advancePercentageInput.value) || 50;
-        this.advanceBase = 'subtotal';
+        this.advanceBase = 'total';
         
         // Hide controls initially
         if (advancePercentageGroup) advancePercentageGroup.style.display = 'none';
         if (advanceBaseGroup) advanceBaseGroup.style.display = 'none';
         if (advanceAmountRow) advanceAmountRow.style.display = 'none';
         
-        console.log('Advance initialized with percentage:', this.advancePercentage);
-        
-        // Set initial display values
-        const displayElement = document.getElementById('advancePercentageDisplay');
-        if (displayElement) {
-            displayElement.textContent = this.advancePercentage;
-        }
+        console.log('Advance initialized successfully');
     }
-
 
     attachEventListeners() {
         // Mode toggle
         const toggleBtn = document.getElementById('toggleMode');
-        toggleBtn.addEventListener('click', () => this.toggleMode());
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => this.toggleMode());
+        }
 
         // Print button
         const printBtn = document.getElementById('printBtn');
-        printBtn.addEventListener('click', () => this.printInvoice());
+        if (printBtn) {
+            printBtn.addEventListener('click', () => this.printInvoice());
+        }
 
-        // Download button
+        // Download button - FIXED
         const downloadBtn = document.getElementById('downloadBtn');
-        downloadBtn.addEventListener('click', () => this.downloadPDF());
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', () => this.downloadPDF());
+        }
 
-        // Add row button
+        // Add Row button - FIXED
         const addRowBtn = document.getElementById('addRowBtn');
-        addRowBtn.addEventListener('click', () => this.addItemRow());
+        if (addRowBtn) {
+            addRowBtn.addEventListener('click', () => this.addItemRow());
+        }
 
-        // GST controls
-        const gstCheckbox = document.getElementById('gstEnabled');
-        gstCheckbox.addEventListener('change', (e) => this.toggleGST(e.target.checked));
-
-        const gstPercentageInput = document.getElementById('gstPercentage');
-        gstPercentageInput.addEventListener('input', () => this.updateGSTPercentage());
-
-        // ADVANCE CONTROLS - Fixed event listeners
+        // ADVANCE CONTROLS - Add null checks
         const advanceCheckbox = document.getElementById('advanceEnabled');
         if (advanceCheckbox) {
             advanceCheckbox.addEventListener('change', (e) => this.toggleAdvance(e.target.checked));
@@ -110,12 +155,10 @@ class InvoiceApp {
 
         const advancePercentageInput = document.getElementById('advancePercentage');
         if (advancePercentageInput) {
-            // Use both 'input' and 'change' events for immediate response
             advancePercentageInput.addEventListener('input', (e) => {
                 console.log('Advance percentage input changed to:', e.target.value);
                 this.updateAdvancePercentage();
             });
-            advancePercentageInput.addEventListener('change', () => this.updateAdvancePercentage());
         }
 
         const advanceBaseSelect = document.getElementById('advanceBase');
@@ -138,26 +181,51 @@ class InvoiceApp {
 
     attachFormListeners() {
         // Invoice metadata listeners
-        document.getElementById('invoiceNumber').addEventListener('input', () => this.updateViewTexts());
-        document.getElementById('invoiceDate').addEventListener('change', () => this.updateViewTexts());
-        document.getElementById('dueDate').addEventListener('change', () => this.updateViewTexts());
+        const invoiceNumber = document.getElementById('invoiceNumber');
+        if (invoiceNumber) {
+            invoiceNumber.addEventListener('input', () => this.updateViewTexts());
+        }
+
+        const invoiceDate = document.getElementById('invoiceDate');
+        if (invoiceDate) {
+            invoiceDate.addEventListener('change', () => this.updateViewTexts());
+        }
+
+        const dueDate = document.getElementById('dueDate');
+        if (dueDate) {
+            dueDate.addEventListener('change', () => this.updateViewTexts());
+        }
 
         // Client details listeners
-        document.getElementById('clientName').addEventListener('input', () => this.updateViewTexts());
-        document.getElementById('clientAddress').addEventListener('input', () => this.updateViewTexts());
-        document.getElementById('clientContact').addEventListener('input', () => this.updateViewTexts());
+        const clientName = document.getElementById('clientName');
+        if (clientName) {
+            clientName.addEventListener('input', () => this.updateViewTexts());
+        }
+
+        const clientAddress = document.getElementById('clientAddress');
+        if (clientAddress) {
+            clientAddress.addEventListener('input', () => this.updateViewTexts());
+        }
+
+        const clientContact = document.getElementById('clientContact');
+        if (clientContact) {
+            clientContact.addEventListener('input', () => this.updateViewTexts());
+        }
 
         // Received amount listener
-        document.getElementById('receivedAmount').addEventListener('input', () => {
-            this.updateCalculations();
-            this.updateViewTexts();
-        });
+        const receivedAmount = document.getElementById('receivedAmount');
+        if (receivedAmount) {
+            receivedAmount.addEventListener('input', () => {
+                this.updateCalculations();
+                this.updateViewTexts();
+            });
+        }
 
         // Add remark field listener
         setTimeout(() => {
             const remarkField = document.getElementById('remarkField');
             if (remarkField) {
-            remarkField.addEventListener('input', () => this.updateViewTexts());
+                remarkField.addEventListener('input', () => this.updateViewTexts());
             }
         }, 100);
     }
@@ -170,44 +238,47 @@ class InvoiceApp {
         const rateInput = row.querySelector('.item-rate');
         const qtyInput = row.querySelector('.item-qty');
 
-        descInput.addEventListener('input', () => this.updateRowView(rowIndex));
-        rateInput.addEventListener('input', () => {
-            this.updateRowCalculation(rowIndex);
-            this.updateRowView(rowIndex);
-            this.updateCalculations();
-        });
-        qtyInput.addEventListener('input', () => {
-            this.updateRowCalculation(rowIndex);
-            this.updateRowView(rowIndex);
-            this.updateCalculations();
-        });
+        if (descInput) {
+            descInput.addEventListener('input', () => this.updateRowView(rowIndex));
+        }
+        
+        if (rateInput) {
+            rateInput.addEventListener('input', () => {
+                this.updateRowCalculation(rowIndex);
+                this.updateRowView(rowIndex);
+                this.updateCalculations();
+            });
+        }
+        
+        if (qtyInput) {
+            qtyInput.addEventListener('input', () => {
+                this.updateRowCalculation(rowIndex);
+                this.updateRowView(rowIndex);
+                this.updateCalculations();
+            });
+        }
     }
 
-    // Add this new method to your InvoiceApp class
-    // Add this method to your InvoiceApp class - Updated with italic styling
     addRemarkSection() {
-    const remarkContainer = document.getElementById('remarkSection');
-    if (!remarkContainer) {
-        const signatureSection = document.querySelector('.signature-section');
-        const remarkDiv = document.createElement('div');
-        remarkDiv.id = 'remarkSection';
-        remarkDiv.className = 'remark-section';
-        remarkDiv.style.marginBottom = '20px';
-        remarkDiv.innerHTML = `
-        <div class="field-group">
-            <label class="field-label">REMARK:</label>
-            <input type="text" id="remarkField" class="edit-field" placeholder="Enter remark here" 
-                style="width: 100%; padding: 8px; font-style: italic;">
-            <span class="view-text" id="remarkView" style="font-style: italic;">-</span>
-        </div>
-        `;
-        signatureSection.parentNode.insertBefore(remarkDiv, signatureSection);
-    }
+        const remarkContainer = document.getElementById('remarkSection');
+        if (!remarkContainer) {
+            const signatureSection = document.querySelector('.signature-section');
+            const remarkDiv = document.createElement('div');
+            remarkDiv.id = 'remarkSection';
+            remarkDiv.className = 'remark-section';
+            remarkDiv.style.marginBottom = '20px';
+            remarkDiv.innerHTML = `
+            <div class="field-group">
+                <label class="field-label">REMARK:</label>
+                <input type="text" id="remarkField" class="edit-field" placeholder="Enter remark here" 
+                    style="width: 100%; padding: 8px; font-style: italic;">
+                <span class="view-text" id="remarkView" style="font-style: italic;">-</span>
+            </div>
+            `;
+            signatureSection.parentNode.insertBefore(remarkDiv, signatureSection);
+        }
     }
 
-
-    // Update the amount section titles
-    // Add this method to make amount section titles editable
     createEditableAmountTitles() {
         const totalsSection = document.querySelector('.totals-section');
         if (!totalsSection || document.getElementById('subtotalTitleInput')) return;
@@ -229,7 +300,7 @@ class InvoiceApp {
 
             const currentText = label.textContent.replace(' :', '').trim();
             const fieldType = Object.keys(defaultTitles).find(key => 
-            defaultTitles[key] === currentText || currentText.includes(defaultTitles[key])
+                defaultTitles[key] === currentText || currentText.includes(defaultTitles[key])
             ) || 'custom' + index;
 
             // Create container for editable title
@@ -259,8 +330,8 @@ class InvoiceApp {
 
             // Add event listener to sync input with display
             titleInput.addEventListener('input', () => {
-            titleView.textContent = titleInput.value + ' :';
-            label.textContent = titleInput.value + ' :';
+                titleView.textContent = titleInput.value + ' :';
+                label.textContent = titleInput.value + ' :';
             });
 
             // Replace label content with our container
@@ -270,10 +341,8 @@ class InvoiceApp {
             // Replace the original label
             label.parentNode.replaceChild(titleContainer, label);
         });
-        }
+    }
 
-
-    // Override the signature upload handler to disable upload
     handleSignatureUpload(e) {
         // Disable signature upload functionality
         e.preventDefault();
@@ -283,19 +352,23 @@ class InvoiceApp {
     }
 
     toggleGST(enabled) {
+        console.log('Toggling GST:', enabled);
         this.gstEnabled = enabled;
+        
         const gstPercentageGroup = document.getElementById('gstPercentageGroup');
         const gstAmountRow = document.getElementById('gstAmountRow');
         
-        if (enabled) {
-            gstPercentageGroup.style.display = 'flex';
-            gstAmountRow.style.display = 'flex';
-        } else {
-            gstPercentageGroup.style.display = 'none';
-            gstAmountRow.style.display = 'none';
+        if (gstPercentageGroup) {
+            gstPercentageGroup.style.display = enabled ? 'flex' : 'none';
         }
         
+        if (gstAmountRow) {
+            gstAmountRow.style.display = enabled ? 'flex' : 'none';
+        }
+        
+        // Update calculations when GST is toggled
         this.updateCalculations();
+        this.updateViewTexts();
     }
 
     toggleAdvance(enabled) {
@@ -305,13 +378,13 @@ class InvoiceApp {
         const advanceAmountRow = document.getElementById('advanceAmountRow');
         
         if (enabled) {
-            advancePercentageGroup.style.display = 'flex';
-            advanceBaseGroup.style.display = 'flex';
-            advanceAmountRow.style.display = 'flex';
+            if (advancePercentageGroup) advancePercentageGroup.style.display = 'flex';
+            if (advanceBaseGroup) advanceBaseGroup.style.display = 'flex';
+            if (advanceAmountRow) advanceAmountRow.style.display = 'flex';
         } else {
-            advancePercentageGroup.style.display = 'none';
-            advanceBaseGroup.style.display = 'none';
-            advanceAmountRow.style.display = 'none';
+            if (advancePercentageGroup) advancePercentageGroup.style.display = 'none';
+            if (advanceBaseGroup) advanceBaseGroup.style.display = 'none';
+            if (advanceAmountRow) advanceAmountRow.style.display = 'none';
         }
         
         this.updateAdvanceCalculation();
@@ -340,7 +413,10 @@ class InvoiceApp {
         
         // Update the display text
         const displayText = this.advanceBase === 'subtotal' ? 'Subtotal' : 'Total Amount';
-        document.getElementById('advanceBaseDisplay').textContent = displayText;
+        const displayElement = document.getElementById('advanceBaseDisplay');
+        if (displayElement) {
+            displayElement.textContent = displayText;
+        }
         
         // Force recalculation
         this.updateAdvanceCalculation();
@@ -386,6 +462,28 @@ class InvoiceApp {
         advanceAmountElement.textContent = this.formatCurrency(advanceAmount);
     }
 
+    updateCurrencyDisplay() {
+        const currencyDisplay = document.getElementById('currencyDisplay');
+        if (currencyDisplay) {
+            const currencyNames = {
+                'INR': 'Indian Rupee',
+                'USD': 'US Dollar',
+                'AED': 'UAE Dirham',
+                'SAR': 'Saudi Riyal'
+            };
+            
+            currencyDisplay.textContent = `${this.currencySymbols[this.currency]} ${this.currency} (${currencyNames[this.currency]})`;
+        }
+    }
+
+    updateAllItemAmounts() {
+        // Update all item row amounts with new currency symbol
+        const rows = document.querySelectorAll('[data-row]');
+        rows.forEach((row, index) => {
+            this.updateRowCalculation(index);
+            this.updateRowView(index);
+        });
+    }
 
     calculateTotal() {
         let subtotal = 0;
@@ -408,16 +506,6 @@ class InvoiceApp {
         }
         
         return subtotal;
-    }
-
-    updateGSTPercentage() {
-        const gstPercentageInput = document.getElementById('gstPercentage');
-        this.gstPercentage = parseFloat(gstPercentageInput.value) || 0;
-        
-        // Update the display percentage
-        document.getElementById('gstPercentageDisplay').textContent = this.gstPercentage;
-        
-        this.updateCalculations();
     }
 
     toggleMode() {
@@ -444,15 +532,14 @@ class InvoiceApp {
         editFields.forEach(field => {
             field.removeAttribute('readonly');
             field.removeAttribute('disabled');
-
-            // Enable advance checkbox
-            const advanceCheckbox = document.getElementById('advanceEnabled');
-            advanceCheckbox.removeAttribute('disabled');
         });
 
-        // Enable GST checkbox
+        // Enable checkboxes
         const gstCheckbox = document.getElementById('gstEnabled');
-        gstCheckbox.removeAttribute('disabled');
+        if (gstCheckbox) gstCheckbox.removeAttribute('disabled');
+
+        const advanceCheckbox = document.getElementById('advanceEnabled');
+        if (advanceCheckbox) advanceCheckbox.removeAttribute('disabled');
     }
 
     disableFields() {
@@ -461,55 +548,61 @@ class InvoiceApp {
             field.setAttribute('readonly', true);
         });
 
-        // Disable GST checkbox in view mode
+        // Disable checkboxes in view mode
         const gstCheckbox = document.getElementById('gstEnabled');
-        gstCheckbox.setAttribute('disabled', true);
+        if (gstCheckbox) gstCheckbox.setAttribute('disabled', true);
 
-        // Disable advance checkbox in view mode
         const advanceCheckbox = document.getElementById('advanceEnabled');
-        advanceCheckbox.setAttribute('disabled', true);
+        if (advanceCheckbox) advanceCheckbox.setAttribute('disabled', true);
     }
 
     updateViewTexts() {
         // Invoice metadata
         const invoiceNumber = document.getElementById('invoiceNumber').value || 'INV002';
-        document.querySelector('#invoiceNumber + .view-text').textContent = invoiceNumber;
+        const invoiceNumberView = document.querySelector('#invoiceNumber + .view-text');
+        if (invoiceNumberView) invoiceNumberView.textContent = invoiceNumber;
 
         const invoiceDate = document.getElementById('invoiceDate').value;
         const formattedDate = invoiceDate ? this.formatDate(invoiceDate) : '22-08-2025';
-        document.querySelector('#invoiceDate + .view-text').textContent = formattedDate;
+        const invoiceDateView = document.querySelector('#invoiceDate + .view-text');
+        if (invoiceDateView) invoiceDateView.textContent = formattedDate;
 
         const dueDate = document.getElementById('dueDate').value;
         const formattedDueDate = dueDate ? this.formatDate(dueDate) : '-';
-        document.querySelector('#dueDate + .view-text').textContent = formattedDueDate;
+        const dueDateView = document.querySelector('#dueDate + .view-text');
+        if (dueDateView) dueDateView.textContent = formattedDueDate;
 
         // Client details
         const clientName = document.getElementById('clientName').value || '-';
-        document.getElementById('clientNameView').textContent = clientName;
+        const clientNameView = document.getElementById('clientNameView');
+        if (clientNameView) clientNameView.textContent = clientName;
 
         const clientAddress = document.getElementById('clientAddress').value || '-';
-        document.getElementById('clientAddressView').innerHTML = clientAddress.replace(/\n/g, '<br>');
+        const clientAddressView = document.getElementById('clientAddressView');
+        if (clientAddressView) clientAddressView.innerHTML = clientAddress.replace(/\n/g, '<br>');
 
         const clientContact = document.getElementById('clientContact').value || '-';
-        document.getElementById('clientContactView').textContent = clientContact;
+        const clientContactView = document.getElementById('clientContactView');
+        if (clientContactView) clientContactView.textContent = clientContact;
 
         // Received amount
         const receivedAmount = parseFloat(document.getElementById('receivedAmount').value) || 0;
-        document.getElementById('receivedAmountView').textContent = this.formatCurrency(receivedAmount);
+        const receivedAmountView = document.getElementById('receivedAmountView');
+        if (receivedAmountView) receivedAmountView.textContent = this.formatCurrency(receivedAmount);
 
-        // Add remark update
+        // Remark update
         const remarkField = document.getElementById('remarkField');
         const remarkView = document.getElementById('remarkView');
         if (remarkField && remarkView) {
             remarkView.textContent = remarkField.value || '-';
-            remarkView.style.fontStyle = 'italic'; // Ensure italic style
+            remarkView.style.fontStyle = 'italic';
         }
 
         // Update all row views
         document.querySelectorAll('.item-row').forEach((row, index) => {
             this.updateRowView(index);
         });
-        }
+    }
 
     updateRowView(rowIndex) {
         const row = document.querySelector(`[data-row="${rowIndex}"]`);
@@ -519,13 +612,19 @@ class InvoiceApp {
         const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
         const qty = parseInt(row.querySelector('.item-qty').value) || 1;
 
-        row.querySelector('.item-description-view').textContent = description;
-        row.querySelector('.item-rate-view').textContent = this.formatCurrency(rate);
-        row.querySelector('.item-qty-view').textContent = qty.toString();
+        const descView = row.querySelector('.item-description-view');
+        const rateView = row.querySelector('.item-rate-view');
+        const qtyView = row.querySelector('.item-qty-view');
+
+        if (descView) descView.textContent = description;
+        if (rateView) rateView.textContent = this.formatCurrency(rate);
+        if (qtyView) qtyView.textContent = qty.toString();
     }
 
     addItemRow() {
         const tbody = document.getElementById('itemsTableBody');
+        if (!tbody) return;
+
         const newRow = document.createElement('tr');
         newRow.className = 'item-row';
         newRow.setAttribute('data-row', this.itemCount);
@@ -537,13 +636,13 @@ class InvoiceApp {
             </td>
             <td>
                 <input type="number" class="item-rate edit-field" step="0.01" min="0" placeholder="0.00" readonly>
-                <span class="view-text item-rate-view">₹0.00</span>
+                <span class="view-text item-rate-view">${this.formatCurrency(0)}</span>
             </td>
             <td>
                 <input type="number" class="item-qty edit-field" min="1" value="1" readonly>
                 <span class="view-text item-qty-view">1</span>
             </td>
-            <td class="item-amount">₹0.00</td>
+            <td class="item-amount">${this.formatCurrency(0)}</td>
             <td class="edit-only">
                 <button class="remove-row-btn" onclick="invoiceApp.removeRow(${this.itemCount})">×</button>
             </td>
@@ -575,94 +674,115 @@ class InvoiceApp {
         const row = document.querySelector(`[data-row="${rowIndex}"]`);
         if (!row) return;
 
-        // Parse values carefully to ensure correct calculation
-        const rateValue = row.querySelector('.item-rate').value;
-        const qtyValue = row.querySelector('.item-qty').value;
-        
-        const rate = parseFloat(rateValue) || 0;
-        const qty = parseInt(qtyValue) || 1;
-        
-        // Ensure both values are valid numbers before calculation
-        const amount = isNaN(rate) || isNaN(qty) ? 0 : rate * qty;
+        const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
+        const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+        const amount = rate * qty;
 
-        // Update the amount display
-        row.querySelector('.item-amount').textContent = this.formatCurrency(amount);
-        
-        // Debug logging for troubleshooting
-        console.log(`Row ${rowIndex}: Rate=${rate}, Qty=${qty}, Amount=${amount}`);
+        const amountCell = row.querySelector('.item-amount');
+        if (amountCell) {
+            amountCell.textContent = this.formatCurrency(amount);
+        }
     }
-
-    
 
     updateCalculations() {
         let subtotal = 0;
-
-        document.querySelectorAll('.item-row').forEach((row, index) => {
-            const rateValue = row.querySelector('.item-rate').value;
-            const qtyValue = row.querySelector('.item-qty').value;
-
-            const rate = parseFloat(rateValue) || 0;
-            const qty = parseInt(qtyValue) || 1;
-
-            const amount = isNaN(rate) || isNaN(qty) ? 0 : rate * qty;
-
-            row.querySelector('.item-amount').textContent = this.formatCurrency(amount);
-            subtotal += amount;
-            // Update advance calculation
-            this.updateAdvanceCalculation();
+        
+        // Calculate subtotal from all rows
+        const rows = document.querySelectorAll('[data-row]');
+        rows.forEach(row => {
+            const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
+            const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+            subtotal += rate * qty;
         });
-
-        // Update subtotal
-        document.getElementById('subtotalAmount').textContent = this.formatCurrency(subtotal);
-
-        // GST & Total
+        
+        // Calculate GST - FIXED LOGIC
         let gstAmount = 0;
-        let total = subtotal;
-
-        if (this.gstEnabled) {
+        if (this.gstEnabled && subtotal > 0) {
             gstAmount = (subtotal * this.gstPercentage) / 100;
-            total = subtotal + gstAmount;
-
-            document.getElementById('gstAmount').textContent = this.formatCurrency(gstAmount);
-            document.getElementById('gstAmountRow').style.display = '';
-        } else {
-            document.getElementById('gstAmount').textContent = this.formatCurrency(0);
-            document.getElementById('gstAmountRow').style.display = 'none';
+            console.log('GST Calculation:', {
+                enabled: this.gstEnabled,
+                subtotal: subtotal,
+                percentage: this.gstPercentage,
+                amount: gstAmount
+            });
         }
-
-        // Update Total
-        document.getElementById('totalAmount').textContent = this.formatCurrency(total);
-
-        // 🔧 FIX: Get received amount from the correct input element
-        const receivedInput = document.getElementById('receivedAmount');
-        const receivedValue = receivedInput ? parseFloat(receivedInput.value) || 0 : 0;
         
-        // Update received amount display
-        document.getElementById('receivedAmountView').textContent = this.formatCurrency(receivedValue);
-
-        // 🔧 FIX: Calculate balance correctly and update multiple elements
-        const balanceDue = total - receivedValue;
+        // Calculate advance (for display only - doesn't affect balance due)
+        let advanceAmount = 0;
+        if (this.advanceEnabled) {
+            const baseAmount = this.advanceBase === 'subtotal' ? subtotal : (subtotal + gstAmount);
+            advanceAmount = (baseAmount * this.advancePercentage) / 100;
+        }
         
-        // Update all balance due display elements
-        const balanceElements = [
-            'balanceDueDisplay',  // Top metadata section
-            'finalBalanceDue'     // Totals section
-        ];
+        // Calculate total
+        const total = subtotal + gstAmount;
         
-        balanceElements.forEach(elementId => {
-            const element = document.getElementById(elementId);
-            if (element) {
-                element.textContent = this.formatCurrency(balanceDue);
-            }
+        // Get received amount
+        const receivedAmountInput = document.getElementById('receivedAmount');
+        const receivedAmount = parseFloat(receivedAmountInput?.value) || 0;
+        
+        // Calculate balance due (CORRECTED: advance amount is NOT subtracted)
+        const balanceDue = total - receivedAmount;
+        
+        // Get current currency symbol
+        const symbol = this.currencySymbols[this.currency];
+        
+        // Update ALL displays with consistent currency symbol using correct element IDs
+        this.updateAmountDisplay('subtotalAmount', subtotal, symbol);
+        this.updateAmountDisplay('gstAmount', gstAmount, symbol);
+        this.updateAmountDisplay('advanceAmount', advanceAmount, symbol);
+        this.updateAmountDisplay('totalAmount', total, symbol);
+        
+        // Update balance due displays directly with correct IDs from HTML
+        const balanceDueDisplay = document.getElementById('balanceDueDisplay');
+        const finalBalanceDue = document.getElementById('finalBalanceDue');
+        
+        if (balanceDueDisplay) {
+            balanceDueDisplay.textContent = `${symbol}${balanceDue.toFixed(2)}`;
+        }
+        
+        if (finalBalanceDue) {
+            finalBalanceDue.textContent = `${symbol}${balanceDue.toFixed(2)}`;
+        }
+        
+        console.log('Final calculations:', {
+            currency: this.currency,
+            symbol: symbol,
+            subtotal: subtotal,
+            gstAmount: gstAmount,
+            advanceAmount: advanceAmount, // This is for display only
+            total: total,
+            balanceDue: balanceDue // This is total - received only
         });
-        // *** IMPORTANT: Update advance calculation LAST ***
-        this.updateAdvanceCalculation();
+    }
+    updateAmountDisplay(elementId, amount) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.textContent = this.formatCurrency(amount);
+        }
     }
 
     formatCurrency(amount) {
-        // Ensure amount is a valid number
         const numAmount = parseFloat(amount) || 0;
-        return `₹${numAmount.toFixed(2)}`;
+        const symbol = this.currencySymbols[this.currency] || '₹';
+        return `${symbol}${numAmount.toFixed(2)}`;
+    }
+
+    handleCurrencyChange(newCurrency) {
+        console.log('Currency changing from', this.currency, 'to', newCurrency);
+        this.currency = newCurrency;
+        
+        // Update currency display
+        this.updateCurrencyDisplay();
+        
+        // Update all item amounts
+        this.updateAllItemAmounts();
+        
+        // Update all calculations
+        this.updateCalculations();
+        
+        // Update view texts
+        this.updateViewTexts();
     }
 
     formatDate(dateString) {
@@ -673,8 +793,6 @@ class InvoiceApp {
         const year = date.getFullYear();
         return `${day}-${month}-${year}`;
     }
-
-    
 
     printInvoice() {
         // Save current mode
@@ -715,33 +833,31 @@ class InvoiceApp {
             }
 
             const invoiceElement = document.querySelector('.invoice-container');
-            // Use higher dpi for good quality
-            const canvas = await html2canvas(invoiceElement, { scale: 2, useCORS: true, backgroundColor: '#fff' });
+            const canvas = await html2canvas(invoiceElement, { 
+                scale: 2, 
+                useCORS: true, 
+                backgroundColor: '#fff' 
+            });
+            
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF('p', 'mm', 'a4');
 
-            // A4 size in pixels at html2canvas default 96dpi: (approx)
             const pdfWidth = 210;
             const pdfHeight = 297;
             const imgWidth = pdfWidth;
-            const pageHeightPx = Math.floor(pdf.internal.pageSize.getHeight() * (canvas.width / pdf.internal.pageSize.getWidth()));
+            const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+            let heightLeft = imgHeight;
             let position = 0;
-            let pageCount = 0;
 
-            // Split and add each page
-            while (position < canvas.height) {
-                // Create canvas slice for the current page
-                const pageCanvas = document.createElement('canvas');
-                pageCanvas.width = canvas.width;
-                pageCanvas.height = Math.min(pageHeightPx, canvas.height - position);
-                const ctx = pageCanvas.getContext('2d');
-                ctx.drawImage(canvas, 0, position, canvas.width, pageCanvas.height, 0, 0, canvas.width, pageCanvas.height);
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pdfHeight;
 
-                const pageImgData = pageCanvas.toDataURL('image/png');
-                if (pageCount > 0) pdf.addPage();
-                pdf.addImage(pageImgData, 'PNG', 0, 0, imgWidth, imgWidth * (pageCanvas.height / canvas.width));
-                position += pageHeightPx;
-                pageCount += 1;
+            while (heightLeft >= 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pdfHeight;
             }
 
             // File name setup
@@ -783,8 +899,6 @@ class InvoiceApp {
     }
 
     calculateItemsPerPage() {
-        // Estimate items per page based on page height and row height
-        // This is a simplified calculation - in a real app, you'd measure actual heights
         return 20; // Conservative estimate for A4 page
     }
 
@@ -824,8 +938,6 @@ class InvoiceApp {
             const rowsForThisPage = Math.min(itemsPerPage, remainingRows);
             const isLastPage = (currentRowIndex + rowsForThisPage) >= rows.length;
             
-            console.log(`Page ${pageNumber}: rows ${currentRowIndex} to ${currentRowIndex + rowsForThisPage - 1}, isLastPage: ${isLastPage}`);
-            
             const newPage = this.createContinuationPage(pageNumber, isLastPage);
             const newTableBody = newPage.querySelector('.items-table tbody');
             
@@ -842,7 +954,6 @@ class InvoiceApp {
             pageNumber++;
         }
     }
-
 
     createContinuationPage(pageNumber, isLastPage) {
         const newPage = document.createElement('div');
@@ -883,18 +994,11 @@ class InvoiceApp {
         return newPage;
     }
 
-
-    getTotalPages() {
-        const rows = document.querySelectorAll('.items-table tbody tr');
-        const itemsPerPage = this.calculateItemsPerPage();
-        return Math.ceil(rows.length / itemsPerPage);
-    }
-
     getTotalsHTML() {
         const gstRowHTML = this.gstEnabled ? `
             <div class="totals-row gst-row">
                 <label>GST AMOUNT (${this.gstPercentage}%):</label>
-                <span>${document.getElementById('gstAmount').textContent}</span>
+                <span>${document.getElementById('gstAmount')?.textContent || this.formatCurrency(0)}</span>
             </div>
         ` : '';
 
@@ -912,20 +1016,20 @@ class InvoiceApp {
             <div class="totals-section">
                 <div class="totals-row">
                     <label>SUBTOTAL:</label>
-                    <span>${document.getElementById('subtotalAmount').textContent}</span>
+                    <span>${document.getElementById('subtotalAmount')?.textContent || this.formatCurrency(0)}</span>
                 </div>
                 ${gstRowHTML}
                 <div class="totals-row total-row">
                     <label>TOTAL:</label>
-                    <span>${document.getElementById('totalAmount').textContent}</span>
+                    <span>${document.getElementById('totalAmount')?.textContent || this.formatCurrency(0)}</span>
                 </div>
                 <div class="totals-row">
                     <label>RECEIVED AMOUNT:</label>
-                    <span>${document.getElementById('receivedAmountView').textContent}</span>
+                    <span>${document.getElementById('receivedAmountView')?.textContent || this.formatCurrency(0)}</span>
                 </div>
                 <div class="totals-row balance-due-row">
                     <label>BALANCE DUE:</label>
-                    <span>${document.getElementById('finalBalanceDue').textContent}</span>
+                    <span>${document.getElementById('finalBalanceDue')?.textContent || this.formatCurrency(0)}</span>
                 </div>
             </div>
             
@@ -933,15 +1037,14 @@ class InvoiceApp {
             
             <div class="signature-section">
                 <div class="signature-display">
-                    <div class="signature-label">SIGNATURE</div>
+                    <div class="signature-label">SEAL</div>
                     <div class="signature-area">
-                        <div class="signature-placeholder">_________________</div>
+                        <img src="seal.png" alt="Company Seal" style="max-height: 150px; max-width: 150px;">
                     </div>
                 </div>
             </div>
         `;
     }
-
 
     ensureSinglePage() {
         const container = document.getElementById('invoiceContainer');
@@ -957,8 +1060,6 @@ class InvoiceApp {
         if (firstPageTotals) firstPageTotals.style.display = 'block';
         if (firstPageSignature) firstPageSignature.style.display = 'block';
         if (firstPageRemark) firstPageRemark.style.display = 'block';
-        
-        console.log('Ensured single page - totals should be visible');
     }
 
     // Data persistence methods
@@ -974,6 +1075,7 @@ class InvoiceApp {
             remarkField: document.getElementById('remarkField')?.value || '',
             gstEnabled: this.gstEnabled,
             gstPercentage: this.gstPercentage,
+            currency: this.currency,
             items: []
         };
 
@@ -1008,7 +1110,17 @@ class InvoiceApp {
         }
         if (data.gstPercentage !== undefined) {
             document.getElementById('gstPercentage').value = data.gstPercentage;
-            this.updateGSTPercentage();
+            this.gstPercentage = data.gstPercentage;
+        }
+
+        // Load currency settings
+        if (data.currency !== undefined) {
+            this.currency = data.currency;
+            const currencySelect = document.getElementById('currencySelect');
+            if (currencySelect) {
+                currencySelect.value = this.currency;
+            }
+            this.updateCurrencyDisplay();
         }
 
         // Load items
@@ -1045,6 +1157,7 @@ class InvoiceApp {
         const row = document.createElement('tr');
         row.className = 'item-row';
         row.setAttribute('data-row', '0');
+        
         row.innerHTML = `
             <td>
                 <input type="text" class="item-description edit-field" placeholder="Enter description" readonly>
@@ -1052,13 +1165,13 @@ class InvoiceApp {
             </td>
             <td>
                 <input type="number" class="item-rate edit-field" step="0.01" min="0" placeholder="0.00" readonly>
-                <span class="view-text item-rate-view">₹0.00</span>
+                <span class="view-text item-rate-view">${this.formatCurrency(0)}</span>
             </td>
             <td>
                 <input type="number" class="item-qty edit-field" min="1" value="1" readonly>
                 <span class="view-text item-qty-view">1</span>
             </td>
-            <td class="item-amount">₹0.00</td>
+            <td class="item-amount">${this.formatCurrency(0)}</td>
             <td class="edit-only">
                 <button class="remove-row-btn" onclick="invoiceApp.removeRow(0)">×</button>
             </td>
