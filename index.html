@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
 </head>
 <body>
     <div class="app-container">
@@ -19,10 +18,6 @@
                 <button id="printBtn" class="print-btn">Print Invoice</button>
             </div>
         </div>
-
-
-       
-
         
         <div class="invoice-container" id="invoiceContainer">
             <div class="page" id="page1">
@@ -135,12 +130,26 @@
                                 </td>
                                 <td class="item-amount">₹0.00</td>
                                 <td class="edit-only">
-                                    <button class="remove-row-btn" onclick="removeRow(0)">×</button>
+                                    <button class="remove-row-btn" onclick="invoiceApp.removeRow(0)">×</button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                     <button id="addRowBtn" class="add-row-btn edit-only">+ Add Row</button>
+                </div>
+
+                <!-- Currency Controls -->
+                <div class="currency-controls edit-only">
+                    <div class="currency-group">
+                        <label class="field-label">CURRENCY:</label>
+                        <select id="currencySelect" class="edit-field currency-select">
+                            <option value="INR">₹ INR (Indian Rupee)</option>
+                            <option value="USD">$ USD (US Dollar)</option>
+                            <option value="AED">AED (UAE Dirham)</option>
+                            <option value="SAR">SAR (Saudi Riyal)</option>
+                        </select>
+                        <span class="view-text" id="currencyDisplay">₹ INR (Indian Rupee)</span>
+                    </div>
                 </div>
 
                 <!-- GST Controls -->
@@ -156,7 +165,7 @@
                     </div>
                 </div>
 
-                <!-- Add this after the GST controls section -->
+                <!-- Advance Controls -->
                 <div class="advance-controls edit-only">
                     <div class="advance-checkbox-group">
                         <input type="checkbox" id="advanceEnabled" class="advance-checkbox">
@@ -170,7 +179,7 @@
                     <div class="advance-base-group" id="advanceBaseGroup" style="display: none;">
                         <label class="field-label">CALCULATE FROM:</label>
                         <select id="advanceBase" class="edit-field advance-select">
-
+                            <option value="subtotal">Subtotal</option>
                             <option value="total">Total Amount</option>
                         </select>
                     </div>
@@ -183,16 +192,13 @@
                         <span id="subtotalAmount">₹0.00</span>
                     </div>
                     <div class="totals-row gst-row" id="gstAmountRow" style="display: none;">
-                        <label>GST AMOUNT :</label>
+                        <label>GST AMOUNT:</label>
                         <span id="gstAmount">₹0.00</span>
                     </div>
-
-                    <!-- Add this row in the totals section after the GST amount row -->
                     <div class="totals-row advance-row" id="advanceAmountRow" style="display: none;">
                         <label>ADVANCE TO BE PAID:</label>
                         <span id="advanceAmount">₹0.00</span>
                     </div>
-                    
                     <div class="totals-row total-row">
                         <label>TOTAL:</label>
                         <span id="totalAmount">₹0.00</span>
